@@ -1,0 +1,27 @@
+slope-signal/
+├── .devcontainer/
+│   └── devcontainer.json        # Codespaces config
+├── api/                         # FastAPI backend
+│   ├── app/
+│   │   ├── __init__.py
+│   │   └── main.py              # "hello world" endpoint only
+│   ├── requirements.txt
+│   └── Dockerfile
+├── ingest/                      # Data ingestion jobs
+│   ├── jobs/
+│   │   └── __init__.py
+│   ├── requirements.txt
+│   └── Dockerfile
+├── web/                         # Next.js frontend
+│   ├── src/
+│   │   └── app/
+│   │       └── page.tsx         # "hello world" page only
+│   ├── package.json
+│   └── Dockerfile
+├── db/
+│   └── migrations/              # Alembic lives here later (Step 3)
+├── docker-compose.yml           # Wires all services + Postgres together
+├── .github/
+│   └── workflows/               # Empty for now, GitHub Actions in Step 7
+├── .gitignore
+└── README.md

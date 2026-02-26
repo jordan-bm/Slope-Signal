@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: slope
+      POSTGRES_PASSWORD: signal
+      POSTGRES_DB: slopesignal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://slope:signal@db:5432/slopesignal
+    depends_on:
+      - db
+    volumes:
+      - ./api:/app
+
+  # web service will be added in Step 2 after Next.js scaffold
+
+volumes:
+  postgres_data:
