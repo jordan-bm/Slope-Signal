@@ -23,7 +23,18 @@ services:
     volumes:
       - ./api:/app
 
-  # web service will be added in Step 2 after Next.js scaffold
+  web:
+    build: ./web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app
+      - /app/node_modules
 
 volumes:
   postgres_data:
