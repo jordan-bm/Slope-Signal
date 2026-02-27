@@ -23,6 +23,16 @@ services:
     volumes:
       - ./api:/app
 
+  ingest:
+    build: ./ingest
+    environment:
+      DATABASE_URL: postgresql://slope:signal@db:5432/slopesignal
+    depends_on:
+      - db
+    volumes:
+      - ./ingest:/app
+      - ./api:/api
+
   web:
     build: ./web
     restart: unless-stopped
