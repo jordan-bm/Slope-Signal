@@ -1,0 +1,52 @@
+name: Daily Ingest
+
+on:
+  schedule:
+    - cron: "0 14 * * *"  # 7am MT = 14:00 UTC
+  workflow_dispatch:       # allows manual trigger from GitHub UI
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: slope
+          POSTGRES_PASSWORD: signal
+          POSTGRES_DB: slopesignal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install API dependencies
+        run: pip install -r api/requirements.txt
+
+      - name: Install ingest dependencies
+        run: pip install -r ingest/requirements.txt
+
+      - name: Run Alembic migrations
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql://slope:signal@localhost:5432/slopesignal
+        run: alembic upgrade head
+
+      - name: Run UAC ingest job
+        env:
+          DATABASE_URL: postgresql://slope:signal@localhost:5432/slopesignal
+          PYTHONPATH: ${{ github.workspace }}/api
+        run: python ingest/jobs/uac.py
