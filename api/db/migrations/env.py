@@ -2,14 +2,24 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 import sys
+import os
 
 sys.path.insert(0, '/app')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from app.database import Base
 from app import models  # noqa: F401
 
 config = context.config
-fileConfig(config.config_file_name)
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# Override sqlalchemy.url with DATABASE_URL env var if present
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
+
 target_metadata = Base.metadata
 
 
