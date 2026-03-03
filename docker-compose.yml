@@ -39,7 +39,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: https://miniature-waddle-wrg76w9wqq77f946j-8000.app.github.dev
     depends_on:
       - api
     volumes:
