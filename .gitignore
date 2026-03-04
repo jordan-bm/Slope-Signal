@@ -40,4 +40,5 @@ yarn-error.log*
 Thumbs.db
 
 # Alembic
-*.pyc
+*.pycawscliv2.zip
+aws/
