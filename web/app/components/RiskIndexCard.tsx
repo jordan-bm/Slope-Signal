@@ -16,83 +16,103 @@ interface Props {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 70) return "text-red-400";
-  if (score >= 40) return "text-orange-400";
-  return "text-green-400";
+  if (score >= 70) return "var(--danger-4)";
+  if (score >= 40) return "var(--danger-3)";
+  if (score >= 20) return "var(--danger-2)";
+  return "var(--danger-1)";
+}
+
+function scoreBg(score: number): string {
+  if (score >= 70) return "rgba(255,31,31,0.08)";
+  if (score >= 40) return "rgba(255,140,0,0.08)";
+  if (score >= 20) return "rgba(255,242,0,0.06)";
+  return "rgba(80,200,120,0.08)";
+}
+
+function scoreBorder(score: number): string {
+  if (score >= 70) return "rgba(255,31,31,0.3)";
+  if (score >= 40) return "rgba(255,140,0,0.3)";
+  if (score >= 20) return "rgba(255,242,0,0.2)";
+  return "rgba(80,200,120,0.3)";
 }
 
 function confidenceLabel(confidence: number): string {
-  if (confidence >= 80) return "High";
-  if (confidence >= 50) return "Moderate";
-  return "Low";
+  if (confidence >= 80) return "HIGH";
+  if (confidence >= 50) return "MODERATE";
+  return "LOW";
 }
 
 export default function RiskIndexCard({ riskIndex }: Props) {
   const { score, factors, confidence } = riskIndex;
+  const color = scoreColor(score);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-5 py-4">
-
-      {/* Score header */}
-      <div className="flex items-center justify-between mb-4">
+    <div
+      className="rounded-lg px-5 py-4"
+      style={{
+        background: scoreBg(score),
+        border: `1px solid ${scoreBorder(score)}`,
+      }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <div className="text-xs uppercase tracking-widest text-zinc-400 mb-1">
-            Risk Index
+          <div className="mono text-xs mb-1" style={{ color: 'var(--slate-400)' }}>
+            RISK INDEX
           </div>
-          <div className={`text-4xl font-bold ${scoreColor(score)}`}>
+          <div className="display leading-none" style={{ color, fontSize: '4rem' }}>
             {score}
-            <span className="text-lg text-zinc-500 font-normal"> / 100</span>
+            <span className="text-2xl ml-1" style={{ color: 'var(--slate-400)' }}>/100</span>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs uppercase tracking-widest text-zinc-400 mb-1">
-            Confidence
+          <div className="mono text-xs mb-1" style={{ color: 'var(--slate-400)' }}>
+            CONFIDENCE
           </div>
-          <div className="text-lg font-semibold text-zinc-300">
+          <div className="mono text-lg font-bold" style={{ color }}>
             {confidenceLabel(confidence)}
-            <span className="text-sm text-zinc-500 font-normal">
-              {" "}({confidence}%)
-            </span>
+          </div>
+          <div className="mono text-xs" style={{ color: 'var(--slate-400)' }}>
+            {confidence}%
           </div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-zinc-800 rounded-full h-2 mb-5">
+      <div className="rounded-full h-1.5 mb-5" style={{ background: 'var(--slate-800)' }}>
         <div
-          className={`h-2 rounded-full transition-all ${
-            score >= 70
-              ? "bg-red-500"
-              : score >= 40
-              ? "bg-orange-500"
-              : "bg-green-500"
-          }`}
-          style={{ width: `${score}%` }}
+          className="h-1.5 rounded-full transition-all duration-700"
+          style={{ width: `${score}%`, background: color }}
         />
       </div>
 
-      {/* Factor breakdown */}
-      <div className="text-xs uppercase tracking-widest text-zinc-400 mb-3">
-        Why this score
+      {/* Factors */}
+      <div className="mono text-xs mb-3" style={{ color: 'var(--slate-400)' }}>
+        SIGNAL BREAKDOWN
       </div>
       <div className="space-y-3">
         {factors.map((factor) => (
           <div key={factor.name}>
             <div className="flex justify-between items-center mb-1">
-              <span className="text-sm text-zinc-300">{factor.name}</span>
-              <span className="text-sm font-mono text-zinc-400">
+              <span className="text-xs" style={{ color: 'var(--slate-200)', fontFamily: 'Barlow, sans-serif' }}>
+                {factor.name}
+              </span>
+              <span className="mono text-xs" style={{ color: factor.points > 0 ? color : 'var(--slate-400)' }}>
                 {factor.points}/{factor.max_points}
               </span>
             </div>
-            <div className="w-full bg-zinc-800 rounded-full h-1 mb-1">
+            <div className="rounded-full h-1" style={{ background: 'var(--slate-800)' }}>
               <div
-                className="h-1 rounded-full bg-blue-500"
+                className="h-1 rounded-full transition-all duration-500"
                 style={{
                   width: `${(factor.points / factor.max_points) * 100}%`,
+                  background: factor.points > 0 ? color : 'transparent',
                 }}
               />
             </div>
-            <div className="text-xs text-zinc-500">{factor.reason}</div>
+            <div className="mono text-xs mt-0.5" style={{ color: 'var(--slate-400)', fontSize: '10px' }}>
+              {factor.reason}
+            </div>
           </div>
         ))}
       </div>

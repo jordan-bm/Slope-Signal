@@ -1,26 +1,105 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --danger-1: #50C878;
+  --danger-2: #FFF200;
+  --danger-3: #FF8C00;
+  --danger-4: #FF1F1F;
+  --danger-5: #1a0a0a;
+  --slate-950: #0a0f14;
+  --slate-900: #0f1923;
+  --slate-800: #1a2535;
+  --slate-700: #243040;
+  --slate-400: #8899aa;
+  --slate-200: #ccd8e0;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--slate-950);
+  color: var(--slate-200);
+  font-family: 'Barlow', sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Topographic background texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 40px,
+      rgba(255,255,255,0.015) 40px,
+      rgba(255,255,255,0.015) 41px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 40px,
+      rgba(255,255,255,0.015) 40px,
+      rgba(255,255,255,0.015) 41px
+    );
+  pointer-events: none;
+  z-index: 0;
 }
+
+#__next, main {
+  position: relative;
+  z-index: 1;
+}
+
+.danger-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mono {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.display {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+/* Danger color utilities */
+.danger-1 { color: var(--danger-1); }
+.danger-2 { color: #b8a800; }
+.danger-3 { color: var(--danger-3); }
+.danger-4 { color: var(--danger-4); }
+.danger-5 { color: #ff6b6b; }
+
+.bg-danger-1 { background-color: var(--danger-1); color: #0a1a0a; }
+.bg-danger-2 { background-color: var(--danger-2); color: #1a1a00; }
+.bg-danger-3 { background-color: var(--danger-3); color: #1a0800; }
+.bg-danger-4 { background-color: var(--danger-4); color: #fff; }
+.bg-danger-5 { background-color: var(--danger-5); color: #ff6b6b; border: 1px solid #ff1f1f; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeInUp 0.4s ease forwards;
+}
+
+.animate-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.animate-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.animate-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.animate-in-delay-4 { animation-delay: 0.4s; opacity: 0; }

@@ -1,80 +1,168 @@
+"use client";
+
 import RiskIndexCard from "./RiskIndexCard";
 
-const DANGER_COLORS: Record<number, string> = {
-  1: "bg-green-700 text-green-100",
-  2: "bg-yellow-600 text-yellow-100",
-  3: "bg-orange-600 text-orange-100",
-  4: "bg-red-700 text-red-100",
-  5: "bg-red-950 text-red-100",
+const PROBLEM_ICONS: Record<string, string> = {
+  "wind slab": "💨",
+  "storm slab": "🌨",
+  "wet slab": "💧",
+  "wet avalanche": "💧",
+  "persistent slab": "⚠️",
+  "deep slab": "🔻",
+  "loose dry": "❄️",
+  "loose wet": "💦",
+  "cornice": "🏔",
+  "gliding": "📐",
 };
+
+function getProblemIcon(problemText: string): string {
+  if (!problemText) return "⚡";
+  const lower = problemText.toLowerCase();
+  for (const [key, icon] of Object.entries(PROBLEM_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return "⚡";
+}
+
+function ProblemBadge({ label, description }: { label: string; description: string }) {
+  if (!label) return null;
+  const icon = getProblemIcon(label);
+  return (
+    <div
+      className="rounded-lg px-4 py-3 flex-1 min-w-0"
+      style={{ background: 'var(--slate-800)', border: '1px solid var(--slate-700)' }}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{icon}</span>
+        <span className="mono text-xs font-bold text-white uppercase tracking-wider">{label}</span>
+      </div>
+      {description && (
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--slate-400)' }}>
+          {description.slice(0, 120)}{description.length > 120 ? '...' : ''}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-lg px-5 py-4"
+      style={{ background: 'var(--slate-900)', border: '1px solid var(--slate-700)' }}
+    >
+      <div className="mono text-xs mb-3 pb-2" style={{ color: 'var(--slate-400)', borderBottom: '1px solid var(--slate-700)' }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
 
 interface Props {
   brief: any;
 }
 
 export default function BriefCard({ brief }: Props) {
-  const dangerColor =
-    DANGER_COLORS[brief.danger_alpine] || "bg-zinc-700 text-zinc-100";
+  const problems = brief.problems || {};
   const fetchedDate = brief.fetched_at
     ? new Date(brief.fetched_at).toLocaleString()
     : "Unknown";
 
-  return (
-    <div className="space-y-5">
+  const problem1 = problems.avalanche_problem_1;
+  const problem1Desc = problems.avalanche_problem_1_description;
+  const problem2 = problems.avalanche_problem_2;
+  const problem2Desc = problems.avalanche_problem_2_description;
+  const problem3 = problems.avalanche_problem_3;
+  const problem3Desc = problems.avalanche_problem_3_description;
 
-      {/* Danger rating */}
-      <div className={`rounded-lg px-5 py-4 ${dangerColor}`}>
-        <div className="text-xs uppercase tracking-widest opacity-75 mb-1">
-          Avalanche Danger
+  const hasProblems = problem1 || problem2 || problem3;
+
+  return (
+    <div className="space-y-4">
+
+      {/* Avalanche Problems */}
+      {hasProblems && (
+        <div className="animate-in animate-in-delay-1">
+          <Section label="AVALANCHE PROBLEMS">
+            <div className="flex flex-wrap gap-3">
+              {problem1 && <ProblemBadge label={problem1} description={problem1Desc} />}
+              {problem2 && <ProblemBadge label={problem2} description={problem2Desc} />}
+              {problem3 && <ProblemBadge label={problem3} description={problem3Desc} />}
+            </div>
+          </Section>
         </div>
-        <div className="text-3xl font-bold">{brief.danger_label}</div>
-        <div className="text-sm opacity-75 mt-1">
-          Alpine · Treeline · Below Treeline — {brief.danger_alpine}/5
-        </div>
-      </div>
+      )}
 
       {/* Risk Index */}
-      <RiskIndexCard riskIndex={brief.risk_index} />
+      <div className="animate-in animate-in-delay-2">
+        <RiskIndexCard riskIndex={brief.risk_index} />
+      </div>
 
-      {/* Bottom line */}
-      {brief.problems?.bottom_line && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-5 py-4">
-          <div className="text-xs uppercase tracking-widest text-zinc-400 mb-2">
-            Bottom Line
-          </div>
-          <p className="text-sm text-zinc-200 leading-relaxed">
-            {brief.problems.bottom_line}
-          </p>
+      {/* Bottom Line */}
+      {problems.bottom_line && (
+        <div className="animate-in animate-in-delay-3">
+          <Section label="BOTTOM LINE">
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--slate-200)' }}>
+              {problems.bottom_line}
+            </p>
+          </Section>
         </div>
       )}
 
-      {/* Discussion */}
+      {/* Current Conditions */}
       {brief.discussion && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-5 py-4">
-          <div className="text-xs uppercase tracking-widest text-zinc-400 mb-2">
-            Current Conditions
-          </div>
-          <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
-            {brief.discussion}
-          </p>
+        <div className="animate-in animate-in-delay-4">
+          <Section label="CURRENT CONDITIONS">
+            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--slate-200)' }}>
+              {brief.discussion}
+            </p>
+          </Section>
         </div>
       )}
 
-      {/* Recent activity */}
-      {brief.problems?.recent_activity && (
-        <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-5 py-4">
-          <div className="text-xs uppercase tracking-widest text-zinc-400 mb-2">
-            Recent Activity
+      {/* Recent Activity */}
+      {problems.recent_activity && (
+        <div className="animate-in" style={{ animationDelay: '0.5s', opacity: 0 }}>
+          <Section label="RECENT ACTIVITY">
+            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--slate-200)' }}>
+              {problems.recent_activity}
+            </p>
+          </Section>
+        </div>
+      )}
+
+      {/* Special Announcement */}
+      {problems.special_announcement && (
+        <div className="animate-in" style={{ animationDelay: '0.6s', opacity: 0 }}>
+          <div
+            className="rounded-lg px-5 py-4"
+            style={{ background: 'rgba(255,140,0,0.08)', border: '1px solid rgba(255,140,0,0.3)' }}
+          >
+            <div className="mono text-xs mb-2" style={{ color: 'var(--danger-3)' }}>
+              ⚠ SPECIAL ANNOUNCEMENT
+            </div>
+            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--slate-200)' }}>
+              {problems.special_announcement}
+            </p>
           </div>
-          <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-line">
-            {brief.problems.recent_activity}
-          </p>
+        </div>
+      )}
+
+      {/* Mountain Weather */}
+      {problems.mountain_weather && (
+        <div className="animate-in" style={{ animationDelay: '0.7s', opacity: 0 }}>
+          <Section label="MOUNTAIN WEATHER">
+            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--slate-200)' }}>
+              {problems.mountain_weather}
+            </p>
+          </Section>
         </div>
       )}
 
       {/* Footer */}
-      <div className="text-xs text-zinc-500 text-right pt-2">
-        Forecast date: {brief.forecast_date} · Fetched: {fetchedDate}
+      <div className="mono text-xs text-right py-2" style={{ color: 'var(--slate-400)' }}>
+        FORECAST DATE: {brief.forecast_date} · FETCHED: {fetchedDate}
       </div>
     </div>
   );

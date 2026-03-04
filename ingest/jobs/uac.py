@@ -52,6 +52,8 @@ def clean_html(text: str) -> str:
     text = text.replace("&nbsp;", " ")
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"\r\r", "\n\n", text)
+    # Remove lines that are just dashes/underscores
+    text = re.sub(r"^[-_]{3,}$", "", text, flags=re.MULTILINE)
     return text.strip()
 def parse_forecast_date(date_str: str) -> date:
     """Parse UAC date string like 'Thursday, February 26, 2026 - 7:01am'."""
@@ -97,9 +99,16 @@ def fetch_and_store_forecast(zone: dict, db: Session):
     forecast_date = parse_forecast_date(advisory.get("date_issued", ""))
     overall_danger = parse_danger_rating(advisory.get("overall_danger_rating", ""))
     problems = {
-        "bottom_line": clean_html(advisory.get("bottom_line", "")),
-        "recent_activity": clean_html(advisory.get("recent_activity", "")),
-        "special_announcement": clean_html(advisory.get("special_announcement", "")),
+    "bottom_line": clean_html(advisory.get("bottom_line", "")),
+    "recent_activity": clean_html(advisory.get("recent_activity", "")),
+    "special_announcement": clean_html(advisory.get("special_announcement", "")),
+    "avalanche_problem_1": clean_html(advisory.get("avalanche_problem_1", "")),
+    "avalanche_problem_1_description": clean_html(advisory.get("avalanche_problem_1_description", "")),
+    "avalanche_problem_2": clean_html(advisory.get("avalanche_problem_2", "")),
+    "avalanche_problem_2_description": clean_html(advisory.get("avalanche_problem_2_description", "")),
+    "avalanche_problem_3": clean_html(advisory.get("avalanche_problem_3", "")),
+    "avalanche_problem_3_description": clean_html(advisory.get("avalanche_problem_3_description", "")),
+    "mountain_weather": clean_html(advisory.get("mountain_weather", ""))[:800],
     }
     discussion = clean_html(advisory.get("current_conditions", ""))
     existing = (

@@ -1,10 +1,8 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import BriefCard from "./components/BriefCard";
-
+import ZoneSelector from "./components/ZoneSelector";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 interface Region {
   id: number;
   slug: string;
@@ -12,14 +10,13 @@ interface Region {
   center: string;
   state: string;
 }
-
 export default function Home() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [brief, setBrief] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [briefLoaded, setBriefLoaded] = useState(false);
   useEffect(() => {
     fetch(`${API_URL}/api/regions`)
       .then((r) => r.json())
@@ -29,10 +26,10 @@ export default function Home() {
       })
       .catch(() => setError("Could not load regions. Is the API running?"));
   }, []);
-
   useEffect(() => {
     if (!selectedSlug) return;
     setLoading(true);
+    setBriefLoaded(false);
     setError(null);
     fetch(`${API_URL}/api/brief/${selectedSlug}`)
       .then((r) => {
@@ -42,65 +39,66 @@ export default function Home() {
       .then((data) => {
         setBrief(data);
         setLoading(false);
+        setTimeout(() => setBriefLoaded(true), 50);
       })
       .catch((e) => {
         setError(e.message);
         setLoading(false);
       });
   }, [selectedSlug]);
-
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100 px-4 py-8 font-sans">
-      <div className="max-w-2xl mx-auto">
-
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-white">
-            Slope Signal
-          </h1>
-          <p className="text-zinc-400 text-sm mt-1">
-            Daily avalanche signal brief — based on public forecast data
+    <main className="min-h-screen" style={{ background: 'var(--slate-950)' }}>
+      {/* Header */}
+      <header style={{ background: 'var(--slate-900)', borderBottom: '1px solid var(--slate-700)' }} className="sticky top-0 z-50">
+        <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded flex items-center justify-center text-white font-bold text-sm" style={{ background: 'var(--danger-3)' }}>
+              ⛰
+            </div>
+            <div>
+              <h1 className="display text-white text-xl leading-none">Slope Signal</h1>
+              <p className="mono text-xs" style={{ color: 'var(--slate-400)' }}>UAC · UTAH AVALANCHE CENTER</p>
+            </div>
+          </div>
+          <div className="mono text-xs" style={{ color: 'var(--slate-400)' }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase()}
+          </div>
+        </div>
+      </header>
+      <div style={{ maxWidth: '56rem', margin: '0 auto', padding: '1.5rem' }}>
+        {/* Disclaimer */}
+        <div className="mb-6 px-4 py-3 rounded" style={{ background: 'rgba(255,140,0,0.08)', border: '1px solid rgba(255,140,0,0.3)' }}>
+          <p className="mono text-xs" style={{ color: 'var(--danger-3)' }}>
+            ⚠ NOT A SAFETY TOOL — Slope Signal presents signals from public UAC forecast data. Always consult utahavalanchecenter.org and make your own informed decisions.
           </p>
         </div>
-
-        {/* Disclaimer */}
-        <div className="bg-yellow-950 border border-yellow-700 rounded-lg px-4 py-3 mb-6 text-yellow-200 text-xs leading-relaxed">
-          ⚠️ <strong>Not a safety tool.</strong> Slope Signal presents signals
-          and risk factors from public avalanche forecast centers. It does not
-          make go/no-go recommendations. Always consult your regional avalanche
-          center and make your own informed decisions.
-        </div>
-
-        {/* Region selector */}
-        <div className="mb-6">
-          <label className="block text-xs text-zinc-400 uppercase tracking-wider mb-2">
-            Zone
-          </label>
-          <select
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={selectedSlug}
-            onChange={(e) => setSelectedSlug(e.target.value)}
-          >
-            {regions.map((r) => (
-              <option key={r.slug} value={r.slug}>
-                {r.name} ({r.center} · {r.state})
-              </option>
-            ))}
-          </select>
-        </div>
-
+        {/* Zone selector */}
+        <ZoneSelector
+          regions={regions}
+          selectedSlug={selectedSlug}
+          onSelect={setSelectedSlug}
+          brief={brief}
+        />
         {/* Content */}
-        {loading && (
-          <div className="text-zinc-400 text-sm text-center py-12">
-            Loading brief...
-          </div>
-        )}
-        {error && (
-          <div className="bg-red-950 border border-red-700 rounded-lg px-4 py-3 text-red-200 text-sm">
-            {error}
-          </div>
-        )}
-        {!loading && !error && brief && <BriefCard brief={brief} />}
+        <div className="mt-6">
+          {loading && (
+            <div className="flex items-center justify-center py-24">
+              <div className="mono text-sm" style={{ color: 'var(--slate-400)' }}>
+                FETCHING FORECAST...
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="px-4 py-3 rounded mono text-sm" style={{ background: 'rgba(255,31,31,0.1)', border: '1px solid rgba(255,31,31,0.3)', color: 'var(--danger-4)' }}>
+              ERROR: {error}
+            </div>
+          )}
+          {!loading && !error && brief && (
+            <div className={briefLoaded ? 'animate-in' : 'opacity-0'}>
+              <BriefCard brief={brief} />
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
