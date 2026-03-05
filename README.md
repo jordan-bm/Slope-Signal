@@ -18,8 +18,9 @@ Built because I ride Utah backcountry. Not a recreation of the UAC website — a
 ![Slope Signal — Risk Index & Bottom Line](screenshots/screenshot-2.png)
 *Composite risk index with signal breakdown, bottom line, and current conditions*
 
-![Slope Signal — Current Conditions & Mountain Weather](screenshots/screenshot-3.png)
-*Full forecast detail: current conditions narrative and mountain weather*
+![Slope Signal — Current Conditions](screenshots/screenshot-3.png)
+![Slope Signal — Recent Activity, Mountain Weather, & Forecast Footer](screenshots/screenshot-4.png)
+*Full forecast detail: current conditions, mountain weather, and recent activity*
 
 ---
 
