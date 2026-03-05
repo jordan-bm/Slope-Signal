@@ -108,7 +108,7 @@ def fetch_and_store_forecast(zone: dict, db: Session):
     "avalanche_problem_2_description": clean_html(advisory.get("avalanche_problem_2_description", "")),
     "avalanche_problem_3": clean_html(advisory.get("avalanche_problem_3", "")),
     "avalanche_problem_3_description": clean_html(advisory.get("avalanche_problem_3_description", "")),
-    "mountain_weather": clean_html(advisory.get("mountain_weather", ""))[:800],
+    "mountain_weather": clean_html(advisory.get("mountain_weather", "")),
     }
     discussion = clean_html(advisory.get("current_conditions", ""))
     existing = (
