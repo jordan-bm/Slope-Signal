@@ -17,4 +17,4 @@ jobs:
           script: |
             cd /home/ec2-user/Slope-Signal
             git pull origin main
-            docker compose exec api python ingest/jobs/uac.py
+            docker-compose exec api python ingest/jobs/uac.py
