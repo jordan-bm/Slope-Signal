@@ -9,9 +9,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'api'))
 from app.models import Region, AvalancheForecast
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://slope:signal@db:5432/slopesignal")
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 UAC_ZONES = [
     {"slug": "uac-salt-lake", "name": "UAC Salt Lake", "url_slug": "salt-lake", "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake/json", "center": "UAC", "state": "UT", "lat": 40.7608, "lon": -111.8910},
     {"slug": "uac-ogden", "name": "UAC Ogden", "url_slug": "ogden", "forecast_url": "https://utahavalanchecenter.org/forecast/ogden/json", "center": "UAC", "state": "UT", "lat": 41.2230, "lon": -111.9738},
@@ -21,6 +25,7 @@ UAC_ZONES = [
     {"slug": "uac-skyline", "name": "UAC Skyline", "url_slug": "skyline", "forecast_url": "https://utahavalanchecenter.org/forecast/skyline/json", "center": "UAC", "state": "UT", "lat": 39.4333, "lon": -111.1333},
     {"slug": "uac-logan", "name": "UAC Logan", "url_slug": "logan", "forecast_url": "https://utahavalanchecenter.org/forecast/logan/json", "center": "UAC", "state": "UT", "lat": 41.7370, "lon": -111.8338},
 ]
+
 DANGER_MAP = {
     "low": 1,
     "limited": 1,
@@ -29,14 +34,70 @@ DANGER_MAP = {
     "high": 4,
     "extreme": 5,
 }
+
 HEADERS = {
     "User-Agent": "SlopeSignal/0.1 jordan.bm0007@gmail.com"
 }
+
+WIND_DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+def wind_direction(degrees):
+    idx = round(degrees / 45) % 8
+    return WIND_DIRS[idx]
+
+def c_to_f(c):
+    return round(c * 9 / 5 + 32, 1)
+
+def fetch_mountain_weather(lat, lon):
+    """Fetch current conditions from OpenWeatherMap for a lat/lon."""
+    if not OPENWEATHER_API_KEY:
+        print("  WARNING: OPENWEATHER_API_KEY not set, skipping weather fetch")
+        return ""
+    try:
+        url = (
+            f"https://api.openweathermap.org/data/2.5/weather"
+            f"?lat={lat}&lon={lon}&appid={OPENWEATHER_API_KEY}&units=imperial"
+        )
+        response = httpx.get(url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        temp = data["main"]["temp"]
+        feels_like = data["main"]["feels_like"]
+        humidity = data["main"]["humidity"]
+        wind_speed = data["wind"]["speed"]
+        wind_deg = data["wind"].get("deg", 0)
+        wind_gust = data["wind"].get("gust", None)
+        description = data["weather"][0]["description"].title()
+        snow_1h = data.get("snow", {}).get("1h", 0)
+        rain_1h = data.get("rain", {}).get("1h", 0)
+
+        wind_dir = wind_direction(wind_deg)
+
+        lines = [
+            f"Conditions: {description}",
+            f"Temperature: {temp}°F (feels like {feels_like}°F)",
+            f"Wind: {wind_speed} mph {wind_dir}" + (f", gusting {wind_gust} mph" if wind_gust else ""),
+            f"Humidity: {humidity}%",
+        ]
+
+        if snow_1h > 0:
+            lines.append(f"Snow (last hour): {round(snow_1h * 0.0394, 2)} in")
+        if rain_1h > 0:
+            lines.append(f"Rain (last hour): {round(rain_1h * 0.0394, 2)} in")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        print(f"  WARNING: Weather fetch failed: {e}")
+        return ""
+
 def parse_danger_rating(rating_str: str):
     """Convert text danger rating to integer 1-5."""
     if not rating_str:
         return None
     return DANGER_MAP.get(rating_str.lower().strip(), None)
+
 def parse_rose_dominant(rose_str: str):
     if not rose_str:
         return None
@@ -45,6 +106,7 @@ def parse_rose_dominant(rose_str: str):
         return max(values) if values else None
     except ValueError:
         return None
+
 def clean_html(text: str) -> str:
     """Strip basic HTML entities and tags from UAC text fields."""
     if not text:
@@ -52,9 +114,9 @@ def clean_html(text: str) -> str:
     text = text.replace("&nbsp;", " ")
     text = re.sub(r"<[^>]+>", "", text)
     text = re.sub(r"\r\r", "\n\n", text)
-    # Remove lines that are just dashes/underscores
     text = re.sub(r"^[-_]{3,}$", "", text, flags=re.MULTILINE)
     return text.strip()
+
 def parse_forecast_date(date_str: str) -> date:
     """Parse UAC date string like 'Thursday, February 26, 2026 - 7:01am'."""
     try:
@@ -62,6 +124,7 @@ def parse_forecast_date(date_str: str) -> date:
         return datetime.strptime(clean, "%A, %B %d, %Y").date()
     except Exception:
         return date.today()
+
 def upsert_region(db: Session, zone: dict) -> Region:
     """Insert region if it doesn't exist, return the region row."""
     region = db.query(Region).filter(Region.slug == zone["slug"]).first()
@@ -80,6 +143,7 @@ def upsert_region(db: Session, zone: dict) -> Region:
         db.refresh(region)
         print(f"  Created region: {region.name}")
     return region
+
 def fetch_and_store_forecast(zone: dict, db: Session):
     """Fetch UAC forecast for one zone and upsert into avalanche_forecasts."""
     print(f"\nFetching: {zone['name']} ({zone['forecast_url']})")
@@ -90,27 +154,36 @@ def fetch_and_store_forecast(zone: dict, db: Session):
     except Exception as e:
         print(f"  ERROR fetching {zone['name']}: {e}")
         return
+
     advisories = data.get("advisories", [])
     if not advisories:
         print(f"  No advisories found for {zone['name']}")
         return
+
     advisory = advisories[0].get("advisory", {})
     region = upsert_region(db, zone)
     forecast_date = parse_forecast_date(advisory.get("date_issued", ""))
     overall_danger = parse_danger_rating(advisory.get("overall_danger_rating", ""))
+
+    # Fetch mountain weather from OpenWeatherMap
+    mountain_weather = fetch_mountain_weather(zone["lat"], zone["lon"])
+    print(f"  Weather fetched: {'yes' if mountain_weather else 'no'}")
+
     problems = {
-    "bottom_line": clean_html(advisory.get("bottom_line", "")),
-    "recent_activity": clean_html(advisory.get("recent_activity", "")),
-    "special_announcement": clean_html(advisory.get("special_announcement", "")),
-    "avalanche_problem_1": clean_html(advisory.get("avalanche_problem_1", "")),
-    "avalanche_problem_1_description": clean_html(advisory.get("avalanche_problem_1_description", "")),
-    "avalanche_problem_2": clean_html(advisory.get("avalanche_problem_2", "")),
-    "avalanche_problem_2_description": clean_html(advisory.get("avalanche_problem_2_description", "")),
-    "avalanche_problem_3": clean_html(advisory.get("avalanche_problem_3", "")),
-    "avalanche_problem_3_description": clean_html(advisory.get("avalanche_problem_3_description", "")),
-    "mountain_weather": clean_html(advisory.get("mountain_weather", "")),
+        "bottom_line": clean_html(advisory.get("bottom_line", "")),
+        "recent_activity": clean_html(advisory.get("recent_activity", "")),
+        "special_announcement": clean_html(advisory.get("special_announcement", "")),
+        "avalanche_problem_1": clean_html(advisory.get("avalanche_problem_1", "")),
+        "avalanche_problem_1_description": clean_html(advisory.get("avalanche_problem_1_description", "")),
+        "avalanche_problem_2": clean_html(advisory.get("avalanche_problem_2", "")),
+        "avalanche_problem_2_description": clean_html(advisory.get("avalanche_problem_2_description", "")),
+        "avalanche_problem_3": clean_html(advisory.get("avalanche_problem_3", "")),
+        "avalanche_problem_3_description": clean_html(advisory.get("avalanche_problem_3_description", "")),
+        "mountain_weather": mountain_weather,
     }
+
     discussion = clean_html(advisory.get("current_conditions", ""))
+
     existing = (
         db.query(AvalancheForecast)
         .filter(
@@ -119,6 +192,7 @@ def fetch_and_store_forecast(zone: dict, db: Session):
         )
         .first()
     )
+
     if existing:
         existing.danger_alpine = overall_danger
         existing.danger_treeline = overall_danger
@@ -141,7 +215,9 @@ def fetch_and_store_forecast(zone: dict, db: Session):
         )
         db.add(forecast)
         print(f"  Inserted forecast for {region.name} on {forecast_date}")
+
     db.commit()
+
 def run():
     print("=== UAC Ingest Job Starting ===")
     db = SessionLocal()
@@ -151,5 +227,6 @@ def run():
     finally:
         db.close()
     print("\n=== UAC Ingest Job Complete ===")
+
 if __name__ == "__main__":
     run()

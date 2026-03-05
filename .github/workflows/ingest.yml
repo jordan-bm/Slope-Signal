@@ -18,4 +18,6 @@ jobs:
             cd /home/ec2-user/Slope-Signal
             git pull origin main
             cd ingest
-            DATABASE_URL=postgresql://slope:signal@localhost:5432/slopesignal python3 jobs/uac.py
+            DATABASE_URL=postgresql://slope:signal@localhost:5432/slopesignal \
+            OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
+            python3 jobs/uac.py
