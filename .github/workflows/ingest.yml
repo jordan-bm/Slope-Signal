@@ -17,4 +17,5 @@ jobs:
           script: |
             cd /home/ec2-user/Slope-Signal
             git pull origin main
-            docker-compose exec api python ingest/jobs/uac.py
+            cd ingest
+            DATABASE_URL=postgresql://slope:signal@localhost:5432/slopesignal python3 jobs/uac.py
