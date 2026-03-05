@@ -32,12 +32,12 @@ DANGER_MAP = {
 HEADERS = {
     "User-Agent": "SlopeSignal/0.1 jordan.bm0007@gmail.com"
 }
-def parse_danger_rating(rating_str: str) -> int | None:
+def parse_danger_rating(rating_str: str):
     """Convert text danger rating to integer 1-5."""
     if not rating_str:
         return None
     return DANGER_MAP.get(rating_str.lower().strip(), None)
-def parse_rose_dominant(rose_str: str) -> int | None:
+def parse_rose_dominant(rose_str: str):
     if not rose_str:
         return None
     try:
