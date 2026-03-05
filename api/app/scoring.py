@@ -65,18 +65,17 @@ def compute_risk_index(
     ))
 
     # --- Factor 3: New snow (max 20 pts) ---
-    # Try WeatherSnapshot first, fall back to parsing problems_json mountain_weather
     snow = None
+    problems = {}
     if weather and weather.new_snow_24h_in is not None:
         snow = weather.new_snow_24h_in
     else:
-        # Parse snow from mountain_weather string in problems_json
         try:
             problems = json.loads(forecast.problems_json or "{}")
             mw = problems.get("mountain_weather", "")
             match = re.search(r"Snow \(last hour\):\s*([\d.]+)\s*in", mw)
             if match:
-                snow = float(match.group(1)) * 24  # rough 24h estimate
+                snow = float(match.group(1)) * 24
         except Exception:
             pass
 
@@ -95,6 +94,13 @@ def compute_risk_index(
     else:
         snow_pts = 0
         reason = "No weather data available"
+
+    factors.append(RiskFactor(
+        name="New Snow Load",
+        points=snow_pts,
+        max_points=20,
+        reason=reason,
+    ))
 
     # --- Factor 4: Wet slide / warming signals (max 10 pts) ---
     wet_hits = keyword_score(full_text, WET_SLIDE_KEYWORDS)
