@@ -15,6 +15,6 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/slope-signal
+            cd /home/ec2-user/Slope-Signal
             git pull origin main
-            docker compose exec -T api python ingest/jobs/uac.py
+            docker compose exec api python ingest/jobs/uac.py
